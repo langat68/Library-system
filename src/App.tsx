@@ -1,60 +1,43 @@
-import React, { useState, useReducer, useEffect, useCallback } from 'react';
-import BookForm from './component/BookForm';
-import BookList from './component/BookList';
-import Pagination from './component/Pagination';
-import { useLocalStorage } from './hooks/useLocalStorage';
-import { bookReducer } from './reducers/bookReducer';
-import { Book } from './types/types';
-import { useBookFilter } from './hooks/useBookfilter'; // Import the hook
-
+// import React from 'react';
 import './App.css';
+import { useReducer, useEffect, useState, createContext } from 'react';
+import axios from 'axios';
+import BookList from './components/BookList';
+import BookReducer, { initialState } from './components/BookReducer';
 
-const App: React.FC = () => {
-  const [books, dispatch] = useReducer(bookReducer, []);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const booksPerPage = 5;
+// Create a context for refreshing the book list
+export const refreshContext = createContext({ refresh: false, setRefresh: (_refresh: boolean) => {} });
 
-  const [storedBooks, setStoredBooks] = useLocalStorage<Book[]>('books', []);
+const App = () => {
+  // Set up state management using useReducer
+  const [state, dispatch] = useReducer(BookReducer, initialState);
+  // State for triggering refreshes
+  const [refresh, setRefresh] = useState<boolean>(false);
 
+  // Fetch books when component mounts or refresh state changes
   useEffect(() => {
-    if (storedBooks.length > 0) {
-      dispatch({ type: 'SET_BOOKS', payload: storedBooks });
+    fetchBooks();
+  }, [refresh]);
+
+  // Function to fetch books from the API
+  const fetchBooks = async () => {
+    try {
+      const response = await axios.get('https://library-backend-2-0kjy.onrender.com/books/');
+      // Update the state with fetched books
+      dispatch({ type: 'SET_BOOKS', payload: response.data });
+    } catch (error) {
+      console.error('Failed to fetch books', error);
     }
-  }, [storedBooks]);
-
-  useEffect(() => {
-    setStoredBooks(books);
-  }, [books, setStoredBooks]);
-
-  const handlePageChange = useCallback((newPage: number) => {
-    setCurrentPage(newPage);
-  }, []);
-
-  const filteredBooks = useBookFilter(books, searchTerm);
+  };
 
   return (
-    <div className="App">
-      <h1>Book Repository</h1>
-      <BookForm dispatch={dispatch} />
-      <input
-        type="text"
-        placeholder="Search by title..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
-      <BookList
-        books={filteredBooks}
-        currentPage={currentPage}
-        booksPerPage={booksPerPage}
-        dispatch={dispatch}
-      />
-      <Pagination
-        currentPage={currentPage}
-        totalBooks={filteredBooks.length}
-        booksPerPage={booksPerPage}
-        onPageChange={handlePageChange}
-      />
+    <div className="app-container">
+      <h1>My Book Collection</h1>
+      {/* Provide refresh context to child components */}
+      <refreshContext.Provider value={{ refresh, setRefresh }}>
+        {/* Render BookList component with books data and dispatch function */}
+        <BookList books={state.books} dispatch={dispatch} />
+      </refreshContext.Provider>
     </div>
   );
 };
