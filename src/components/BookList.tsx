@@ -1,7 +1,7 @@
 import { useState, useContext } from 'react'; // Import React hooks
 import axios from 'axios'; // Import Axios for HTTP requests
 import { Book } from './BookReducer'; // Import Book type
-import Form from './Form'; // Import Form component
+import BookForm from './BookForm'; // Import BookForm component
 import { refreshContext } from '../App'; // Import refresh context
 
 interface BookListProps {
@@ -31,7 +31,7 @@ const BookList = ({ books, dispatch }: BookListProps) => {
 
   return (
     <div className="book-list-container">
-      <Form dispatch={dispatch} bookToEdit={bookToEdit} setBookToEdit={setBookToEdit} /> {/* Render Form */}
+      <BookForm dispatch={dispatch} bookToEdit={bookToEdit} setBookToEdit={setBookToEdit} /> {/* Render Form */}
       <h2>Book List</h2>
       <div>
         <table className="book-table">
